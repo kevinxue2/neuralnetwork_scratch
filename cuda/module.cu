@@ -32,7 +32,7 @@ double* load_data(const char* f_name, bool is_image){
         num_col = reverseEndian(num_col);
     }
     magic = reverseEndian(magic);
-    data_len = reverseEndian(data_len)/8;
+    data_len = reverseEndian(data_len);
     printf("%d %d %d %d\n", magic, data_len, num_rows, num_col);
     int *data_h = (int *)calloc(data_len * num_rows * num_col * sizeof(double),1);
     double *data_f = (double *)calloc(data_len * num_rows * num_col * sizeof(double),1);
@@ -54,37 +54,40 @@ double* load_data(const char* f_name, bool is_image){
       return NULL;
     }
     f.close();
-    // double *data_d;
-    // CUDA_CHECK(cudaMalloc(&data_d, data_len * num_rows * num_col * sizeof(double)));
-    // CUDA_CHECK(cudaMemcpy(data_d, data_f, data_len * num_rows * num_col * sizeof(double), cudaMemcpyHostToDevice));
     free(data_h);
-    // free(data_f);
     return data_f;
 }
 
 
 
 int main(){
-    double *data_x;
-    cudaMalloc(&data_x, 10 * 10 * sizeof(double));
-    createRandomMatrix(10, 10, data_x);
-    data_x = load_data("../dataset/t10k-images-idx3-ubyte", true);
-    double *data_y = load_data("../dataset/t10k-labels-idx1-ubyte", false);
+    // load train and test datasets
+    double *data_x = load_data("../dataset/train-images-idx3-ubyte", true);
+    double *data_y = load_data("../dataset/train-labels-idx1-ubyte", false);
+    double *test_x = load_data("../dataset/10k-images-idx3-ubyte", true);
+    double *test_y = load_data("../dataset/10k-labels-idx1-ubyte", false);
     
+    int num_layers = 2;
     Layer layers[2] = {Layer(128, "relu"), Layer(10, "sigmoid")};
-    Model m = Model(layers, 2);
-    m.compile(data_x, data_y, 784, 512);
-    printf("Training start %d\n", sizeof(layers));
-    m.fit(20);
+    Model m = Model(layers, num_layers);
+    m.set_data(data_x, data_y, 784, 60000);
+    printf("Training start %d\n");
+    m.fit(10);
     printf("Training end\n");
-    print_device(layers[1].Z, 10, 20);
-    // print_device(data_y, 10, 1);
-    // printf("%d\n", m.accuracy(layers[1].Z, data_y, 100));
+    printf("%d\n", m.accuracy(layers[num_layers-1].Z, data_y, 100));
 
+
+    free(data_x);
+    free(data_y);
+    free(test_x);
+    free(test_y);
+    for (int i = 0; i < num_layers; i++){
+        layers[i].free_all();
+    }
+    // Check for errors missed
     cudaError_t cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "CUDA error: %s\n", cudaGetErrorString(cudaStatus));
-        // Handle the error appropriately (e.g., cleanup and return)
     }
 
 }

@@ -10,7 +10,7 @@ public:
     int n;
     Model(Layer* l, int num_l);
 
-    void compile(double *X_p, double* Y_p, int X_size, int data_len);
+    void set_data(double *X_p, double* Y_p, int X_size, int data_len);
 
     void set_Y(double *Z, double* Y_b, int batch_size, int b_num);
 

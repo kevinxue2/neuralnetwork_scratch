@@ -1,4 +1,6 @@
 #include "helpers.h"
+#include <unistd.h> 
+#include <cuda_runtime.h>
 
 void CUDA_CHECK(cudaError_t cudaError) {
     if (cudaError != cudaSuccess) {
@@ -15,28 +17,35 @@ void CHECK_CUBLAS(cublasStatus_t status) {
 }
 
 // Matrix functions
+
 __global__ void elementwiseMult(int m, int n, double* matrix, double* matrix2){
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    // if (idx < m * n && matrix[idx] < 0) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int idx = row * m + col;
     if (idx < m * n) {
         matrix[idx] *= matrix2[idx];
     }
 }
 
 __global__ void fill_A_B(int m, int n, double* matrix){
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    // Fill matrix with values between A and B
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int idx = row * m + col;
     if (idx < m * n) {
         matrix[idx] = matrix[idx] * 2 - 1;
     }
 }
 
 void print_matrix(double *mat, int m, int n){
+    
     for (int i = 0; i < m; i++){
         for (int j = 0; j < n; j++){
-            printf("%f ", min(double(6900000), max(double(-6900000), mat[m * j + i])));
+            printf("%f ", min(double(1000), max(double(-1000), mat[m * j + i])));
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 void print_device(double *dev, int m, int n){
@@ -52,6 +61,7 @@ void createRandomMatrix(int m, int n, double* matrix) {
     curandSetPseudoRandomGeneratorSeed(prng, 123);
     curandGenerateUniformDouble(prng, matrix, m * n);
     curandDestroyGenerator(prng);
-    int nBlocks = (m * n)/BLOCK_SIZE;
-    fill_A_B<<<512, BLOCK_SIZE>>>(m, n, matrix);
+    dim3 threads(16,16);
+    dim3 blocks((m + threads.x - 1)  / threads.x, (n + threads.y - 1)  / threads.y);
+    fill_A_B<<<blocks, threads>>>(m, n, matrix);
 }

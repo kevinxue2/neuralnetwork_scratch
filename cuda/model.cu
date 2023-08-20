@@ -80,37 +80,36 @@ void Model::fit(int epoch){
     CUDA_CHECK(cudaFree(Y_batch));
 }
 
-double Model::predict(double *inp_X, double *inp_Y){
+void Model::predict(double *inp_X, double *inp_Y, int data_len){
     // Todo: 
-    int batch_size = 512;
-    int num_batch = 8;
-    double *x_mat = X;
+    double *X_device;
+    CUDA_CHECK(cudaMalloc(&X_device, m * data_len * sizeof(double)));
+    CUDA_CHECK(cudaMemcpy(X_device, inp_X, m * data_len * sizeof(double), cudaMemcpyHostToDevice));
+    double *x_mat = X_device;
     int x_size = m;
     double total = 0;
     for (int l = 0; l < num_layers; l++){
-        layers[l].forward_prop(x_mat, x_size, batch_size);
+        layers[l].forward_prop(x_mat, x_size, data_len);
         x_mat = layers[l].Z;
         x_size = layers[l].units;
-        total += accuracy(layers[num_layers-1].Z, Y, batch_size);
-        printf("total [%f] (%d)\n", total, l);
     }
-    return total/n;
+    CUDA_CHECK(cudaFree(X_device));
 }
 
-int Model::accuracy(double *Z, double* Y, int num){
+int Model::accuracy(double *Z, double* Y_check, int num){
     // Measure correct predictions
-    double *Z_host = (double *)malloc(sizeof(double) * n * layers[num_layers-1].units);
+    double *Z_host = (double *)malloc(sizeof(double) * num * layers[num_layers-1].units);
     int temp_max = 0;
     int count = 0;
-    CUDA_CHECK(cudaMemcpy(Z_host, Z, sizeof(double) * n * layers[num_layers-1].units, cudaMemcpyDeviceToHost));
-    for (int i = 0; i < n; i++){
+    CUDA_CHECK(cudaMemcpy(Z_host, Z, sizeof(double) * num * layers[num_layers-1].units, cudaMemcpyDeviceToHost));
+    for (int i = 0; i < num; i++){
         temp_max = 0;
         for (int j = 0; j < 10; j++){
             if (Z_host[j + i * 10] > Z_host[temp_max + i * 10]){
                 temp_max = j;
             }
         }
-        if ((double)temp_max == Y[i]){
+        if ((double)temp_max == Y_check[i]){
             count += 1;
         }
         

@@ -33,7 +33,7 @@ double* load_data(const char* f_name, bool is_image){
     }
     magic = reverseEndian(magic);
     data_len = reverseEndian(data_len);
-    printf("%d %d %d %d\n", magic, data_len, num_rows, num_col);
+    printf("%s %d %d %d %d\n", f_name, magic, data_len, num_rows, num_col);
     int *data_h = (int *)calloc(data_len * num_rows * num_col * sizeof(double),1);
     double *data_f = (double *)calloc(data_len * num_rows * num_col * sizeof(double),1);
     // read images
@@ -59,23 +59,25 @@ double* load_data(const char* f_name, bool is_image){
 }
 
 
-
 int main(){
     // load train and test datasets
     double *data_x = load_data("../dataset/train-images-idx3-ubyte", true);
     double *data_y = load_data("../dataset/train-labels-idx1-ubyte", false);
-    double *test_x = load_data("../dataset/10k-images-idx3-ubyte", true);
-    double *test_y = load_data("../dataset/10k-labels-idx1-ubyte", false);
+    double *test_x = load_data("../dataset/t10k-images-idx3-ubyte", true);
+    double *test_y = load_data("../dataset/t10k-labels-idx1-ubyte", false);
     
     int num_layers = 2;
     Layer layers[2] = {Layer(128, "relu"), Layer(10, "sigmoid")};
     Model m = Model(layers, num_layers);
     m.set_data(data_x, data_y, 784, 60000);
-    printf("Training start %d\n");
-    m.fit(10);
+    printf("Training start\n");
+    m.fit(300);
     printf("Training end\n");
-    printf("%d\n", m.accuracy(layers[num_layers-1].Z, data_y, 100));
-
+    printf("Train Data: %d\n", m.accuracy(layers[num_layers-1].Z, data_y, 60000));
+    // Predict with test data
+    m.predict(test_x, test_y, 10000);
+    // Check accuracy of test data
+    printf("Test Data: %d\n", m.accuracy(layers[num_layers-1].Z, test_y, 10000));
 
     free(data_x);
     free(data_y);

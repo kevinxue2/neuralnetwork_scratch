@@ -18,24 +18,29 @@ Layer::Layer(int u, const char* activation_string){
 void Layer::forward_prop(double* A, int A_X, int A_Y){
     // Initialize CUDA device memory
     if (!init){
+        
         CUDA_CHECK(cudaMalloc(&W, units * A_X * sizeof(double)));
         createRandomMatrix(units, A_X, W);
-        CUDA_CHECK(cudaMalloc(&b, units * 1 * sizeof(double)));
-        createRandomMatrix(units, 1, b);
-        CUDA_CHECK(cudaMalloc(&Z, units * A_Y * sizeof(double)));
-        cudaMemset(Z, 0, units * A_Y * sizeof(double));
         CUDA_CHECK(cudaMalloc(&dW, units * A_X * sizeof(double)));
         cudaMemset(dW, 0, units * A_X * sizeof(double));
+        CUDA_CHECK(cudaMalloc(&b, units * 1 * sizeof(double)));
+        createRandomMatrix(units, 1, b);
         CUDA_CHECK(cudaMalloc(&db, units * 1 * sizeof(double)));
         cudaMemset(db, 0, units * 1 * sizeof(double));
+        // Assume train dataset called first and A_Y never greater than initial
+        CUDA_CHECK(cudaMalloc(&Z, units * A_Y * sizeof(double)));
+        cudaMemset(Z, 0, units * A_Y * sizeof(double));
         CUDA_CHECK(cudaMalloc(&dZ, units * A_Y * sizeof(double)));
         cudaMemset(dZ, 0, units * A_Y * sizeof(double));
+        // Create 1-vector
         CUDA_CHECK(cudaMalloc(&one_d, A_Y * sizeof(double)));
         cudaMemset(one_d, 1, A_Y * sizeof(double));
-        init = true;
-        A_x = A_X;
-        A_y = A_Y;
+        init = true; 
     }
+    // Set sizes
+    A_x = A_X;
+    // Can set multiple times for different dataset sizes 
+    A_y = A_Y;
     // Z = W x A
     double alpha = 1.0;
     double beta = 0.0;

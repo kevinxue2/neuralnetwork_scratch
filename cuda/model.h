@@ -16,7 +16,7 @@ public:
 
     void fit(int epoch);
 
-    double predict(double *inp_X, double *inp_Y);
+    void predict(double *inp_X, double *inp_Y, int data_len);
 
     int accuracy(double *Z, double* Y, int num);
 };

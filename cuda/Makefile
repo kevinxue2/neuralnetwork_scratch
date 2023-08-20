@@ -3,13 +3,13 @@ CFLAGS = -I/usr/include
 LDFLAGS = -L/mnt/c/Users/Kevin/Desktop/wsl/neuralnetworkcpp/cpp_imp/cuda_lib
 LIBS = -lcudart -lcublas -lcurand
 
-all: test a.out
+all: test model
 
 test: activation.o layer.o model.o helpers.o test.o
 	$(NVCC) $(CFLAGS) $(LDFLAGS) activation.o helpers.o layer.o model.o test.o  -o test $(LIBS)
 
-a.out: activation.o layer.o model.o module.o helpers.o
-	$(NVCC) $(CFLAGS) $(LDFLAGS) activation.o helpers.o layer.o model.o module.o  -o a.out $(LIBS)
+model: activation.o layer.o model.o module.o helpers.o
+	$(NVCC) $(CFLAGS) $(LDFLAGS) activation.o helpers.o layer.o model.o module.o  -o model $(LIBS)
 
 activation.o: activation.cu activation.h
 	$(NVCC) -c activation.cu -o activation.o $(CFLAGS)
@@ -30,7 +30,7 @@ module.o: module.cu module.h
 	$(NVCC) -c module.cu -o module.o $(CFLAGS)
 
 clean:
-	rm -f *.o test
+	rm -f *.o test model
 
 
 

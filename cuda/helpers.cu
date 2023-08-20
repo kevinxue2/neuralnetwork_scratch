@@ -49,7 +49,6 @@ void print_matrix(double *mat, int m, int n){
 }
 
 void print_device(double *dev, int m, int n){
-    return;
     double *temp = (double *)calloc(sizeof(double), m * n);
     CUDA_CHECK(cudaMemcpy(temp, dev, sizeof(double) * m * n, cudaMemcpyDeviceToHost));
     print_matrix(temp, m, n);
